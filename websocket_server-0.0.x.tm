@@ -1,4 +1,4 @@
-package provide websocket_server 0.0.4
+package provide websocket_server 0.0.5
 
 package require TclOO
 package require sha1
@@ -26,7 +26,10 @@ oo::class create websocket_server {
 
     method perform_handshake {client_socket} {
         set request [split [chan read $client_socket] \n]
-        puts "perform_handshake: $request"
+        if {[chan eof $client_socket]} {
+            chan close $client_socket
+            set clients [lsearch -inline -all -not -exact $clients $client_socket]
+        } else {
         set key [lindex [lindex $request [lsearch $request Sec-WebSocket-Key*]] end]
         chan puts $client_socket "HTTP/1.1 101 Switching Protocols"
         chan puts $client_socket "Upgrade: websocket"
@@ -35,10 +38,10 @@ oo::class create websocket_server {
         chan puts $client_socket ""
         chan event $client_socket readable [list [self] read_data $client_socket]
     }
+    }
 
     method read_data {client_socket} {
         set received_message [chan read $client_socket]
-        puts "read_data: $received_message"
         if {[chan eof $client_socket]} {
             chan close $client_socket
             set clients [lsearch -inline -all -not -exact $clients $client_socket]
@@ -60,13 +63,17 @@ oo::class create websocket_server {
     }
     
     method broadcast {message} {
+        set length [string length $message]
+        if {$length < 126} {
         set message \x81[binary format H* [format %02x [string length $message]]]$message
-        puts $message
+        } elseif {$length < 65536} {
+            set message \x81\x7e[binary format H* [format %04x [string length $message]]]$message
+        } else {
+            #client will close the connection if you try to send a single message this big
+            set message \x81\x7f[binary format H* [format %08x [string length $message]]]$message
+        }
         foreach client $clients {
             puts -nonewline $client $message
         }
     }
 }
-
-websocket_server create myServer 9999 callback
-proc callback {msg} {puts $msg}
