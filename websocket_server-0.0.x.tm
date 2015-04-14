@@ -1,4 +1,4 @@
-package provide websocket_server 0.0.1
+package provide websocket_server 0.0.2
 
 package require TclOO
 package require sha1
@@ -19,16 +19,19 @@ oo::class create websocket_server {
 
     method accept_connection {client_socket address port} {
         lappend clients $client_socket
-        chan configure $client_socket -blocking no -buffering none -encoding utf-8 -translation binary
+        chan configure $client_socket -blocking no -buffering none
+        puts [chan read $client_socket]
         chan event $client_socket readable [list [self] read_data $client_socket]
     }
 
     method read_data {client_socket} {
+        puts "read data"
         if {[chan eof $client_socket]} {
             chan close $client_socket
             set clients [lsearch -inline -all -not -exact $clients $client_socket]
         } else {
             set received_data [chan read -nonewline $client_socket]
+            puts [binary encode hex $received_data]
             set received_data_with_truncated_separators [regsub \r\r\n $received_data \n]
             set received_data_list [split $received_data_with_truncated_separators \n]
             if {[lsearch -glob $received_data_list GET*HTTP/1.1*] >= 0} {
