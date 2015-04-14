@@ -1,4 +1,4 @@
-package provide websocket_server 0.0.5
+package provide websocket_server 0.0.6
 
 package require TclOO
 package require sha1
@@ -20,7 +20,7 @@ oo::class create websocket_server {
 
     method accept_connection {client_socket address port} {
         lappend clients $client_socket
-        chan configure $client_socket -blocking no -buffering none -encoding iso8859-1 -translation binary
+        chan configure $client_socket -blocking no -buffering none -encoding iso8859-1 -translation crlf
         chan event $client_socket readable [list [self] perform_handshake $client_socket]
     }
 
