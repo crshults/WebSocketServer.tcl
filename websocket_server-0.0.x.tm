@@ -1,4 +1,4 @@
-package provide websocket_server 0.0.7
+package provide websocket_server 0.0.8
 
 package require TclOO
 package require sha1
@@ -16,6 +16,9 @@ oo::class create websocket_server {
 
     destructor {
         close $server_socket
+        foreach client $clients {
+            chan close $client
+        }
     }
 
     method accept_connection {client_socket address port} {
@@ -57,7 +60,7 @@ oo::class create websocket_server {
             for {set i 0} {$i < $payload_length} {incr i} {
                 append message [binary format c1 [expr {[lindex $payload $i] ^ $masking_key([expr $i % 4])}]]
             }
-            $handler $message
+            {*}$handler $message
             set message {}
         }
     }
