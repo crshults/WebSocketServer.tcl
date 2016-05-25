@@ -17,5 +17,5 @@ myServer broadcast "This is a message from the server."
 ## How to make it available for use:
 
 1. Take the Tcl module file and drop it into `<TclInstallRoot>\lib\tcl8\8.6\`
-2. Rename it to websocket_server-0.0.6.tm
+2. Rename it to websocket_server-0.0.9.tm
 3. `package require websocket_server`
